@@ -2,8 +2,9 @@ using StudyTimeApp;
 using System.Diagnostics;
 using System.Windows.Forms;
 using System.Runtime.InteropServices;
+using System;
 
-namespace SleepTimeApp
+namespace StudyTimeApp
 {
     public partial class Form1 : Form
     {
@@ -18,8 +19,12 @@ namespace SleepTimeApp
 
         private Stopwatch stopwatch = new Stopwatch();
         private System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+        private DateTime startTime;
+        private DateTime endTime;
         BindingSource StudyDayBindingSource = new BindingSource();
         BindingSource StudyTimeBindingSource = new BindingSource();
+
+        List<StudyDay> days = new List<StudyDay>();
 
         public Form1()
         {
@@ -37,6 +42,7 @@ namespace SleepTimeApp
                 stopwatch.Restart();
                 timer.Start();
                 groupBox1.Visible = false;
+                startTime = DateTime.Now;
             }
             else
             {
@@ -45,8 +51,11 @@ namespace SleepTimeApp
                 stopwatch.Stop();
                 timer.Stop();
                 groupBox1.Visible = true;
-                txt_time.Text = FormatTime(stopwatch.Elapsed);
+                txt_totaltime.Text = FormatTime(stopwatch.Elapsed);
                 txt_date.Text = DateTime.Now.ToString("yyyy-MM-dd");
+                endTime = DateTime.Now;
+                txt_starttime.Text = startTime.ToString("HH:mm:ss");
+                txt_endtime.Text = endTime.ToString("HH:mm:ss");
             }
         }
 
@@ -70,7 +79,7 @@ namespace SleepTimeApp
             txt_timer.Text = "Elapsed time: " + FormatTime(elapsed);
         }
 
-        private string FormatTime(TimeSpan time)
+        public static string FormatTime(TimeSpan time)
         {
             if (time.TotalHours >= 1)
             {
@@ -89,8 +98,9 @@ namespace SleepTimeApp
         private void btn_showtimes_Click(object sender, EventArgs e)
         {
             StudyTimeDAO timeDAO = new StudyTimeDAO();
+            days = timeDAO.getAllDays();
             // Connect list to grid view controll
-            StudyDayBindingSource.DataSource = timeDAO.getAllTimes();
+            StudyDayBindingSource.DataSource = days;
             dataGridView1.DataSource = StudyDayBindingSource;
             dataGridView1.Columns["ID"].Visible = false;
         }
@@ -101,6 +111,7 @@ namespace SleepTimeApp
             // Connect list to grid view controll
             StudyDayBindingSource.DataSource = timeDAO.searchDaysText(txt_search.Text);
             dataGridView1.DataSource = StudyDayBindingSource;
+            dataGridView2.DataSource = null;
         }
 
         private void monthCalendar1_DateChanged(object sender, DateRangeEventArgs e)
@@ -116,17 +127,27 @@ namespace SleepTimeApp
         private void btn_submit_Click(object sender, EventArgs e)
         {
             // Add new item to database
-            StudyTime newStudy = new StudyTime
+            StudyDay newDay = new StudyDay
             {
-                Date = DateTime.Now,
+                Date = DateTime.Now.ToString("yyyy-MM-dd"),
                 Time = FormatTime(stopwatch.Elapsed),
-                Notes = txt_notes.Text,
-                Summary = txt_summary.Text
+            };
+            Studies newStudy = new Studies
+            {
+                TotalTime = FormatTime(stopwatch.Elapsed),
+                StartTime = startTime.ToString("HH:mm:ss"),
+                EndTime = endTime.ToString("HH:mm:ss"),
+                Summary = txt_summary.Text,
+                Notes = txt_notes.Text
             };
             StudyTimeDAO newTimeDAO = new StudyTimeDAO();
-            newTimeDAO.addStudyDay(newStudy);
-            MessageBox.Show("New study added successfully!");
+            newTimeDAO.addStudyDay(newDay, newStudy);
+            //MessageBox.Show("New study added successfully!");
             groupBox1.Visible = false;
+
+            dataGridView1.DataSource = null;
+            dataGridView2.DataSource = null;
+            days = newTimeDAO.getAllDays();
         }
 
         private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
@@ -135,22 +156,46 @@ namespace SleepTimeApp
 
             DataGridView dataGridView = (DataGridView)sender;
             int rowClicked = dataGridView.CurrentRow.Index;
-            StudyTimeDAO studiesDAO = new StudyTimeDAO();
+
             // Connect list to grid view controll
-            StudyTimeBindingSource.DataSource = studiesDAO.getAllStudies(rowClicked);
+            StudyTimeBindingSource.DataSource = days[rowClicked].Studies;
             dataGridView2.DataSource = StudyTimeBindingSource;
-            dataGridView2.Columns["ID"].Visible = false;
+            if (dataGridView2.Rows.Count > 0)
+            {
+                dataGridView2.Columns["ID"].Visible = false;
+                dataGridView2.Columns["days_ID"].Visible = false;
+            }
         }
 
         private void btn_delete_Click(object sender, EventArgs e)
         {
-            DataGridView dataGridView = (DataGridView)sender;
-            int rowClicked = dataGridView.CurrentRow.Index;
-            int id = (int)dataGridView1.Rows[rowClicked].Cells[0].Value;
+            int daysClicked = (dataGridView1.CurrentRow != null) ? dataGridView1.CurrentRow.Index : -1;
+            int studyClicked = (dataGridView2.CurrentRow != null) ? dataGridView2.CurrentRow.Index : -1;
+            StudyTimeDAO deleted = new StudyTimeDAO();
 
-            StudyTimeDAO deletedStudy = new StudyTimeDAO();
-            int result = deletedStudy.deleteStudy(id);
-            MessageBox.Show("Study times from ");
+            if (daysClicked != -1 && studyClicked != -1)
+            {
+                //MessageBox.Show("Studies Clicked!");
+                int studiesID = (int)dataGridView2.Rows[studyClicked].Cells[0].Value;
+                int result = deleted.deleteStudy(studiesID);
+
+                dataGridView2.DataSource = null;
+                days = deleted.getAllDays();
+            }
+            else if (daysClicked != -1)
+            {
+                //MessageBox.Show("Days clicked");
+                int daysID = (int)dataGridView1.Rows[daysClicked].Cells[0].Value;
+                int result = deleted.deleteDay(daysID);
+
+                dataGridView1.DataSource = null;
+                dataGridView2.DataSource = null;
+                days = deleted.getAllDays();
+            }
+            else
+            {
+                MessageBox.Show("How did you do this...? How did you click Delete Selected with nothing selected WTF");
+            }
         }
     }
 }

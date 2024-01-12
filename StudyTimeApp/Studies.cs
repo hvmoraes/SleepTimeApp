@@ -10,9 +10,10 @@ namespace StudyTimeApp
     {
         public int ID { get; set; }
         public String TotalTime { get; set; }
-        public DateTime StartTime { get; set; }
-        public DateTime EndTime { get; set; }
-        public String Notes { get; set; }
+        public String StartTime { get; set; }
+        public String EndTime { get; set; }
         public String Summary { get; set; }
+        public String Notes { get; set; }
+        public int days_ID {  get; set; }
     }
 }

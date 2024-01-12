@@ -1,4 +1,4 @@
-namespace SleepTimeApp
+namespace StudyTimeApp
 {
     internal static class Program
     {
