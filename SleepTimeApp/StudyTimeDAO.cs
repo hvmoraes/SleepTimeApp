@@ -1,6 +1,7 @@
 ﻿using MySql.Data.MySqlClient;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,7 +10,7 @@ namespace StudyTimeApp
 {
     internal class StudyTimeDAO
     {
-        string connectionString = "datasource=studydb.czmok0ea8zww.eu-north-1.rds.amazonaws.com;port=3306;username=admin;password=kiko123454321;database=studyDB;";
+        string connectionString = Environment.GetEnvironmentVariable("connectionSTR");
 
         public List<StudyTime> getAllTimes()
         {
@@ -28,7 +29,7 @@ namespace StudyTimeApp
             {
                 while (reader.Read())
                 {
-                    StudyTime test = new StudyTime
+                    StudyTime day = new StudyTime
                     {
                         ID = reader.GetInt32(0),
                         Date = reader.GetDateTime(1),
@@ -36,14 +37,49 @@ namespace StudyTimeApp
                         Notes = reader.GetString(3),
                         Summary = reader.GetString(4),
                     };
-                    returnThis.Add(test);
+                    returnThis.Add(day);
                 }
             }
             connection.Close();
 
             return (returnThis);
         }
-        public List<StudyTime> searchStudies(String searchText)
+
+        public List<Studies> getAllStudies(int timeID)
+        {
+            // Start with an empty list
+            List<Studies> returnThis = new List<Studies>();
+
+            // Connect to MySQL
+            MySqlConnection connection = new MySqlConnection
+                (connectionString);
+            connection.Open();
+
+            // Define statement to fetch all studies
+            MySqlCommand command = new MySqlCommand("SELECT * FROM studies WHERE days_ID = @daysid", connection);
+            command.Parameters.AddWithValue("@daysid", timeID);
+
+            using (MySqlDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    Studies study = new Studies
+                    {
+                        ID = reader.GetInt32(0),
+                        TotalTime = reader.GetString(1),
+                        StartTime = reader.GetDateTime(2),
+                        EndTime = reader.GetDateTime(3),
+                        Notes = reader.GetString(4),
+                        Summary = reader.GetString(5),
+                    };
+                    returnThis.Add(study);
+                }
+            }
+            connection.Close();
+
+            return (returnThis);
+        }
+        public List<StudyTime> searchDaysText(String searchText)
         {
             // Start with an empty list
             List<StudyTime> returnThis = new List<StudyTime>();
@@ -65,7 +101,7 @@ namespace StudyTimeApp
             {
                 while (reader.Read())
                 {
-                    StudyTime test = new StudyTime
+                    StudyTime day = new StudyTime
                     {
                         ID = reader.GetInt32(0),
                         Date = reader.GetDateTime(1),
@@ -73,7 +109,7 @@ namespace StudyTimeApp
                         Notes = reader.GetString(3),
                         Summary = reader.GetString(4),
                     };
-                    returnThis.Add(test);
+                    returnThis.Add(day);
                 }
             }
             connection.Close();
@@ -117,7 +153,7 @@ namespace StudyTimeApp
             return (returnThis);
         }
 
-        internal int addStudy(StudyTime newStudy)
+        internal int addStudyDay(StudyTime newStudy)
         {
             // Connect to MySQL
             MySqlConnection connection = new MySqlConnection

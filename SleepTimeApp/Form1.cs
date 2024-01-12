@@ -18,6 +18,7 @@ namespace SleepTimeApp
 
         private Stopwatch stopwatch = new Stopwatch();
         private System.Windows.Forms.Timer timer = new System.Windows.Forms.Timer();
+        BindingSource StudyDayBindingSource = new BindingSource();
         BindingSource StudyTimeBindingSource = new BindingSource();
 
         public Form1()
@@ -88,30 +89,28 @@ namespace SleepTimeApp
         private void btn_showtimes_Click(object sender, EventArgs e)
         {
             StudyTimeDAO timeDAO = new StudyTimeDAO();
-
             // Connect list to grid view controll
-            StudyTimeBindingSource.DataSource = timeDAO.getAllTimes();
-            dataGridView1.DataSource = StudyTimeBindingSource;
+            StudyDayBindingSource.DataSource = timeDAO.getAllTimes();
+            dataGridView1.DataSource = StudyDayBindingSource;
             dataGridView1.Columns["ID"].Visible = false;
         }
 
         private void btn_search_Click(object sender, EventArgs e)
         {
             StudyTimeDAO timeDAO = new StudyTimeDAO();
-
             // Connect list to grid view controll
-            StudyTimeBindingSource.DataSource = timeDAO.searchStudies(txt_search.Text);
-            dataGridView1.DataSource = StudyTimeBindingSource;
+            StudyDayBindingSource.DataSource = timeDAO.searchDaysText(txt_search.Text);
+            dataGridView1.DataSource = StudyDayBindingSource;
         }
 
         private void monthCalendar1_DateChanged(object sender, DateRangeEventArgs e)
         {
             string formattedDate = monthCalendar1.SelectionRange.Start.ToString("yyyy-MM-dd");
-            StudyTimeDAO timeDAO = new StudyTimeDAO();
 
+            StudyTimeDAO timeDAO = new StudyTimeDAO();
             // Connect list to grid view controll
-            StudyTimeBindingSource.DataSource = timeDAO.searchDates(formattedDate);
-            dataGridView1.DataSource = StudyTimeBindingSource;
+            StudyDayBindingSource.DataSource = timeDAO.searchDates(formattedDate);
+            dataGridView1.DataSource = StudyDayBindingSource;
         }
 
         private void btn_submit_Click(object sender, EventArgs e)
@@ -125,7 +124,7 @@ namespace SleepTimeApp
                 Summary = txt_summary.Text
             };
             StudyTimeDAO newTimeDAO = new StudyTimeDAO();
-            newTimeDAO.addStudy(newStudy);
+            newTimeDAO.addStudyDay(newStudy);
             MessageBox.Show("New study added successfully!");
             groupBox1.Visible = false;
         }
@@ -133,6 +132,14 @@ namespace SleepTimeApp
         private void dataGridView1_CellClick(object sender, DataGridViewCellEventArgs e)
         {
             btn_delete.Visible = true;
+
+            DataGridView dataGridView = (DataGridView)sender;
+            int rowClicked = dataGridView.CurrentRow.Index;
+            StudyTimeDAO studiesDAO = new StudyTimeDAO();
+            // Connect list to grid view controll
+            StudyTimeBindingSource.DataSource = studiesDAO.getAllStudies(rowClicked);
+            dataGridView2.DataSource = StudyTimeBindingSource;
+            dataGridView2.Columns["ID"].Visible = false;
         }
 
         private void btn_delete_Click(object sender, EventArgs e)
